@@ -1,0 +1,9 @@
+{
+  "name": "Game2048",
+  "uuid": "b731dbae-994b-444d-a002-c3a56b983089",
+  "version": "3.6.1",
+  "creator": {
+    "version": "3.6.1"
+  },
+  "dependencies": {}
+}
