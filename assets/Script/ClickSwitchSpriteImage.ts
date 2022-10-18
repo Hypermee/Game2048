@@ -1,9 +1,12 @@
 import { _decorator, Component, SpriteFrame, Sprite, CCString, Node, sys, find } from 'cc';
+import { VoiceManager } from './VoiceManager';
+import { Queen } from './SkinStyleMode';
 const { ccclass, property } = _decorator;
 
 const Data = {
     voice: true,
     music: true,
+    style: true,
 };
 
 export default Data;
@@ -29,21 +32,32 @@ export class ClickSwitchSprite extends Component {
 
     onLoad() {
         const sprite = this.node.getComponent(Sprite);
-        let voice: any = find("Voice").getComponent("VoiceManager");
+        let voice: any = find("Voice").getComponent(VoiceManager);
         sprite.spriteFrame = Data[this.key] ? this.beforeIcon : this.afterIcon;
 
         this.node.on(Node.EventType.TOUCH_END, () => {
             sprite.spriteFrame = Data[this.key] ? this.afterIcon : this.beforeIcon;
             sys.localStorage.setItem(this.key, !Data[this.key] ? '1' : '0');
             Data[this.key] = !Data[this.key];
-            if(this.key == 'music') {
-                if(Data.voice) voice.playEffect();
 
+            if(Data.voice) voice.playEffect();
+            
+            if(this.key == 'music') {
                 let bgm: any = find("BackgroundMusic").getComponent("BackgroundMusicManager");
                 !Data[this.key] ? bgm.pause() : bgm.play();
             }
 
-            if(this.key == 'voice' && Data[this.key]) voice.playEffect();
+            if(this.key == 'style') {
+                for(let i = 0;i < Queen.length;i++) {
+                    if(!Queen[i].sprite) {
+                        Queen.splice(i, 1);
+                        i--;
+                        continue;
+                    }
+                    
+                    Queen[i].changeStyle();
+                }
+            }
         })
     }
 }

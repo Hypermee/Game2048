@@ -21,6 +21,12 @@ export class VoiceManager extends Component {
     })
     private show: AudioClip
 
+    @property({
+        type: AudioClip,
+        tooltip: '无法移动'
+    })
+    private move: AudioClip
+
     onLoad() {
         director.addPersistRootNode(this.node);
 

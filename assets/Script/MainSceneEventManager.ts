@@ -19,7 +19,7 @@ export class MainSceneEventManager extends Component {
     }
 
     start() {
-        this.Main.getChildByName("ClassicMode").on(Node.EventType.TOUCH_END, () => {
+        this.Main.getChildByName("ClassicMode").once(Node.EventType.TOUCH_END, () => {
             if(this._alert !== null) return;
             
             if(Data.voice) (find("Voice").getComponent("VoiceManager") as any).playEffect();
@@ -51,7 +51,7 @@ export class MainSceneEventManager extends Component {
 
                     if(this._alert === null) return;
 
-                    (this._alert.getComponent("SettingAlertManager") as any).close(() => {
+                    (this._alert.getComponent("AlertManager") as any).close(() => {
                         this._alert.removeFromParent();
                         this._alert = null;
                     })

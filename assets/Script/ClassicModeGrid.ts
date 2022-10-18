@@ -1,10 +1,11 @@
-import Data from './ClickSwitchSpriteImage';
 import { ClassicModeGame } from './ClassicModeGame';
 import { _decorator, Component, Node, Tween, math, Sprite, Layers, Animation, AnimationComponent, UITransform, find, resources, Prefab, instantiate, Label, LabelOutline, Vec2 } from 'cc';
+import Data from './ClickSwitchSpriteImage';
+import { Queen } from './SkinStyleMode';
 const { ccclass, property } = _decorator;
 const { size, Vec3 } = math;
 
-type _2048 = 2 | 4 | 8 | 16 | 32 | 64 | 256 | 512 | 1024 | 2048;
+export type _2048 = 2 | 4 | 8 | 16 | 32 | 64 | 256 | 512 | 1024 | 2048;
 
 const Sqrt2 = (_num: _2048): number => {
     let flag: number = 0;
@@ -19,69 +20,83 @@ const Sqrt2 = (_num: _2048): number => {
 
 @ccclass('ClassicModeGrid')
 export class ClassicModeGrid extends Component {
-    private grid: Node = null;
+    public sprite: Sprite = null;
 
-    private label: Node = null;
+    public label: Label = null;
 
-    private animation: boolean = false;
+    public number: _2048 = null;
+
+    public change: boolean = false;
+
+    public animation: boolean = false;
 
     private _: ClassicModeGame = null;
 
     onLoad() {
-        this._ = this.node.parent.getComponent("ClassicModeGame") as ClassicModeGame;
-    }
-
-    start() {
-        this.setNumber(2048);
-
-        this.node.on(Node.EventType.TOUCH_END, () => {
-            this.textAnimation('left');
-        })
+        this._ = this.node.parent.getComponent(ClassicModeGame);
     }
 
     setNumber(num: _2048, type: boolean = true) {
+        num = Math.abs(num) as _2048;
+        if(this.label && parseInt(this.label.string) == num) return;
+
         this.delNumber();
         let i = Sqrt2(num);
+        
+        this.number = num;
+        let grid = new Node("Number");
+        grid.layer = Layers.Enum.UI_2D;
+        if(type) grid.setScale(new Vec3(0, 0, 0));
+        grid.addComponent(Sprite).spriteFrame = Data.style ? this._.lightGrid[i] :  this._.darkGrid[i];
+        grid.addComponent(UITransform).setContentSize(this.node.getComponent(UITransform).contentSize);
 
-        this.grid = new Node("Number");
-        this.grid.layer = Layers.Enum.UI_2D;
-        this.grid.setScale(new Vec3(0, 0, 0));
-        this.grid.addComponent(Sprite).spriteFrame = type ? this._.lightGrid[i] :  this._.darkGrid[i];
-        this.grid.addComponent(UITransform).setContentSize(this.node.getComponent(UITransform).contentSize);
+        this.sprite = grid.getComponent(Sprite);
+        Queen.push(this);
 
         resources.load("prefab/ClassicLabel", Prefab, (error, prefab) => {
             if(error) return;
 
-            this.label = instantiate(prefab);
-            let label = this.label.getComponent(Label);
-            label.string = num.toString();
-            label.fontSize = 42 * this.node.scale.x;
-            label.lineHeight = 32 * this.node.scale.x;
+            let label = instantiate(prefab);
+            this.label = label.getComponent(Label);
+            this.label.string = num.toString();
+            this.label.fontSize = 42 * this.node.scale.x;
+            this.label.lineHeight = 32 * this.node.scale.x;
 
-            this.label.parent = this.grid;
+            this.label.node.parent = this.sprite.node;
         })
-        
-        if(Data.voice) (find("Voice").getComponent("VoiceManager") as any).playEffect('show');
 
-        this.grid.parent = this.node;
+        this.sprite.node.parent = this.node;
 
-        let tween = new Tween();
-        tween.target(this.grid)
-        .to(0.15, { scale: new Vec3(1.1, 1.1, 1.1) })
-        .to(0.1, { scale: new Vec3(1, 1, 1) })
-        .start();
+        if(type) {
+            let tween = new Tween();
+            tween.target(this.sprite.node)
+            .to(0.15, { scale: new Vec3(1.1, 1.1, 1.1) })
+            .to(0.1, { scale: new Vec3(1, 1, 1) })
+            .start();
+        }
+    }
+
+    changeStyle() {
+        if(this.number) {
+            let i = Sqrt2(this.number);
+            let contentSize = this.node.getComponent(UITransform).contentSize;
+            this.sprite.spriteFrame = Data.style ? this._.lightGrid[i] :  this._.darkGrid[i];
+            this.sprite.addComponent(UITransform).setContentSize(contentSize);
+        }
     }
 
     delNumber() {
-        if(this.grid !== null) {
-            this.grid.removeFromParent();
-            this.grid = null;
-        }
-
         if(this.label !== null) {
-            this.label.removeFromParent();
+            this.label.node.removeFromParent();
             this.label = null;
         }
+
+        if(this.sprite !== null) {
+            this.sprite.node.removeFromParent();
+            this.sprite = null;
+        }
+
+        this.number = null;
     }
 
     textAnimation(direction: string) {
@@ -97,28 +112,29 @@ export class ClassicModeGrid extends Component {
             let horizontal: number = 0;
             switch(direction) {
                 case 'left':
-                    vertical = trans;
+                    horizontal = -trans;
                     break;
                 case 'right':
-                    vertical = -trans;
-                    break;
-                case 'top':
                     horizontal = trans;
                     break;
+                case 'top':
+                    vertical = trans;
+                    break;
                 case 'bottom':
-                    horizontal = -trans;
+                    vertical = -trans;
                     break;
                 default:
                     break;
             }
     
             let tween = new Tween();
-            tween.target(this.label)
+            tween.target(this.label.node)
             .by(0.15, { position: new Vec3(horizontal, vertical, 0) })
             .to(0.1, { position: new Vec3(0, 0, 0) })
+            .call(() => this.animation = false)
             .start()
 
-            resolve(!(this.animation = false));
+            resolve(true);
         })
     }
 }

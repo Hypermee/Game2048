@@ -19,9 +19,11 @@ export class ProgressBar extends Component {
     private progress: number = 0
 
     onLoad() {
+        let style = !(sys.localStorage.getItem('style') === '0');
         let voice = !(sys.localStorage.getItem('voice') === '0');
         let music = !(sys.localStorage.getItem('music') === '0');
 
+        Data.style = style;
         Data.voice = voice;
         Data.music = music;
     }
